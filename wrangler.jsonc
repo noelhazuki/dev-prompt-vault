@@ -1,1 +1,15 @@
-
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dev-prompt-vault",
+  "main": "src/index.js",
+  "compatibility_date": "2026-06-30",
+  "assets": {
+    "directory": "public"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "DEV_PROMPT_VAULT_KV",
+      "id": "cea61af4577947f3a003c583d35d58eb"
+    }
+  ]
+}
