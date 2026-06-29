@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dev-prompt-vault",
   "main": "src/index.js",
-  "compatibility_date": "2026-06-30",
+  "compatibility_date": "2026-06-01",
   "assets": {
     "directory": "public"
   },
