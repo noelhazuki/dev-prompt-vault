@@ -1,1 +1,112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API疎通テスト</title>
+<style>
+  body {
+    background: #1a1a2e;
+    color: #e8e6f0;
+    font-family: 'Hiragino Sans', sans-serif;
+    padding: 20px;
+    line-height: 1.7;
+  }
+  h1 { font-size: 18px; color: #c97c3a; }
+  .box {
+    background: #22223a;
+    border: 1px solid #3a3a5c;
+    border-radius: 10px;
+    padding: 16px;
+    margin: 16px 0;
+  }
+  input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #3a3a5c;
+    background: #2a2a45;
+    color: #e8e6f0;
+    margin-bottom: 10px;
+    box-sizing: border-box;
+  }
+  button {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: none;
+    background: #c97c3a;
+    color: white;
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+  button.secondary { background: #3a3a5c; }
+  pre {
+    background: #0d0d18;
+    padding: 12px;
+    border-radius: 6px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 13px;
+  }
+  .ok { color: #4caf80; }
+  .ng { color: #e05555; }
+</style>
+</head>
+<body>
 
+<h1>Prompt Vault API疎通テスト</h1>
+
+<div class="box">
+  <div>WorkerのURL（末尾スラッシュ無しで）</div>
+  <input id="baseUrl" value="https://dev-prompt-vault.noel-hazuki.workers.dev">
+
+  <div>テストデータ（適当な文字でOK）</div>
+  <input id="testData" value="テスト送信データ こんにちは">
+
+  <button onclick="doSave()">① /api/save にテストデータを送る</button>
+  <button class="secondary" onclick="doLoad()">② /api/load で読み込んで確認する</button>
+</div>
+
+<div class="box">
+  <div>結果</div>
+  <pre id="result">ここに結果が出るで</pre>
+</div>
+
+<script>
+function showResult(label, ok, text) {
+  const el = document.getElementById('result');
+  el.innerHTML = `<span class="${ok ? 'ok' : 'ng'}">[${label}] ${ok ? '成功' : '失敗'}</span>\n\n` + text;
+}
+
+async function doSave() {
+  const base = document.getElementById('baseUrl').value.replace(/\/$/, '');
+  const data = document.getElementById('testData').value;
+  try {
+    const res = await fetch(base + '/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ test: data, savedAt: new Date().toISOString() })
+    });
+    const text = await res.text();
+    showResult('SAVE', res.ok, `status: ${res.status}\n\n` + text);
+  } catch (e) {
+    showResult('SAVE', false, 'エラー: ' + e.message + '\n\n(file://で開いてるとCORSでブロックされる可能性があるで。Cloudflare上で開いて試してな)');
+  }
+}
+
+async function doLoad() {
+  const base = document.getElementById('baseUrl').value.replace(/\/$/, '');
+  try {
+    const res = await fetch(base + '/api/load');
+    const text = await res.text();
+    showResult('LOAD', res.ok, `status: ${res.status}\n\n` + text);
+  } catch (e) {
+    showResult('LOAD', false, 'エラー: ' + e.message);
+  }
+}
+</script>
+
+</body>
+</html>
