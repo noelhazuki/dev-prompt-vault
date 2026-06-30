@@ -590,12 +590,7 @@ function extractSlots(text) {
   return seen;
 }
 
-function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) state = JSON.parse(raw);
-  } catch(e) {}
-  // 初期カテゴリ
+function applyDefaultIfEmpty() {
   if (state.categories.length === 0) {
     state.categories = [
       { id: 'cat-1', name: '引き継ぎ' },
@@ -609,12 +604,54 @@ function loadData() {
         memo: 'チャットが長くなったら使う'
       }
     ];
+    return true;
+  }
+  return false;
+}
+
+// サーバー(KV)優先で読み込み、失敗したらローカルの控えにフォールバックする
+async function loadData() {
+  let loadedFromServer = false;
+  try {
+    const res = await fetch('/api/load');
+    if (res.ok) {
+      const data = await res.json();
+      if (data) {
+        state = data;
+        loadedFromServer = true;
+      }
+    }
+  } catch (e) {
+    console.warn('サーバーからの読み込み失敗。ローカルの控えを使うで:', e);
+  }
+
+  if (!loadedFromServer) {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) state = JSON.parse(raw);
+    } catch (e) {}
+  }
+
+  const seeded = applyDefaultIfEmpty();
+  if (seeded) {
     saveData();
+  } else if (loadedFromServer) {
+    // サーバーから取れた最新データをローカルの控えにも反映しておく
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
   }
 }
 
+// ローカルには即保存、サーバーへは裏で送る（失敗してもローカルは残る）
 function saveData() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+
+  fetch('/api/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(state)
+  }).catch(e => {
+    console.warn('サーバーへの保存失敗。ローカルには保存済みやで:', e);
+  });
 }
 
 // ===== レンダリング =====
@@ -970,8 +1007,9 @@ function esc(str) {
 }
 
 // ===== 起動 =====
-loadData();
-render();
+loadData().then(() => {
+  render();
+});
 </script>
 </body>
 </html>
