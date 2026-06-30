@@ -616,9 +616,12 @@ async function loadData() {
     const res = await fetch('/api/load');
     if (res.ok) {
       const data = await res.json();
-      if (data) {
+      // データの形が正しいか確認（categories/promptsの配列があるか）してから採用する
+      if (data && Array.isArray(data.categories) && Array.isArray(data.prompts)) {
         state = data;
         loadedFromServer = true;
+      } else if (data) {
+        console.warn('サーバーのデータが想定外の形やったから無視するで:', data);
       }
     }
   } catch (e) {
